@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holy Trinity — Bist du mausig, atzig oder fotzig?</title>
+<meta name="description" content="Bist du mausig, atzig oder fotzig? Mach den Test!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14100f;
+    --paper: #221b17;
+    --paper-2: #271f19;
+    --text: #f6f1e7;
+    --muted: #a89e91;
+    --line: rgba(246,241,231,0.10);
+
+    --atzig: #9CA66B;
+    --atzig-dim: #6E7A46;
+    --fotzig: #FF2E88;
+    --fotzig-2: #FFD23F;
+    --mausig: #FFC4D6;
+    --mausig-2: #FFF3E9;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ---------- ambient background blobs (signature atmosphere) ---------- */
+  .blob{
+    position:fixed;
+    border-radius:50%;
+    filter:blur(70px);
+    opacity:.28;
+    pointer-events:none;
+    z-index:0;
+  }
+  .blob-1{width:480px;height:480px;background:var(--fotzig);top:-140px;left:-160px;animation:float1 22s ease-in-out infinite;}
+  .blob-2{width:420px;height:420px;background:var(--atzig);bottom:-160px;right:-140px;animation:float2 26s ease-in-out infinite;}
+  .blob-3{width:340px;height:340px;background:var(--mausig);top:40%;right:-120px;animation:float3 19s ease-in-out infinite;opacity:.18;}
+  @keyframes float1{0%,100%{transform:translate(0,0);}50%{transform:translate(40px,50px);}}
+  @keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-30px,-40px);}}
+  @keyframes float3{0%,100%{transform:translate(0,0);}50%{transform:translate(-40px,30px);}}
+  @media (prefers-reduced-motion: reduce){.blob{animation:none !important;}}
+
+  .display{font-family:'Unbounded', sans-serif;}
+
+  .card{
+    width:100%;
+    max-width:560px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:28px 26px 22px;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.75);
+    position:relative;
+    overflow:hidden;
+    z-index:1;
+  }
+
+  /* ---------- header ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .back-btn{
+    width:38px;height:38px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:rgba(246,241,231,0.04);
+    color:var(--text);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:16px;
+    transition:transform .15s ease, background .15s ease, opacity .15s ease;
+    flex-shrink:0;
+  }
+  .back-btn:hover:not(:disabled){background:rgba(246,241,231,0.09);transform:translateX(-2px);}
+  .back-btn:disabled{opacity:.25;cursor:default;transform:none;}
+
+  .skip-btn{
+    background:none;border:none;color:var(--muted);
+    font-family:inherit;font-size:12.5px;font-weight:700;
+    letter-spacing:.03em;
+    cursor:pointer;
+    padding:6px 4px;
+    text-decoration:underline;
+    text-decoration-color:transparent;
+    transition:color .15s ease, text-decoration-color .15s ease;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .skip-btn:hover:not(:disabled){color:var(--text);text-decoration-color:var(--muted);}
+  .skip-btn:disabled{opacity:.3;cursor:default;text-decoration:none;}
+
+  /* ---------- progress bar ---------- */
+  .progress-wrap{margin-bottom:10px;}
+  .progress-labels{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:8px;
+  }
+  .progress-labels .step{
+    font-size:12.5px;font-weight:800;letter-spacing:.04em;
+    color:var(--text);font-variant-numeric:tabular-nums;
+  }
+  .progress-labels .step span{color:var(--muted);font-weight:700;}
+  .progress-labels .pct{
+    font-size:11.5px;font-weight:700;color:var(--muted);
+    font-variant-numeric:tabular-nums;
+  }
+  .progress-track{
+    position:relative;
+    height:10px;
+    width:100%;
+    border-radius:999px;
+    background:rgba(246,241,231,0.08);
+    overflow:hidden;
+  }
+  .progress-fill{
+    position:relative;
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, var(--mausig), var(--fotzig) 55%, var(--atzig-dim));
+    box-shadow:0 0 14px rgba(255,46,136,0.35);
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-fill::after{
+    content:'';
+    position:absolute;right:0;top:0;bottom:0;width:14px;
+    background:radial-gradient(circle, rgba(255,255,255,0.55), transparent 70%);
+  }
+
+  /* vibe lean meter — secondary, shows live tilt toward each vibe */
+  .lean-wrap{margin-bottom:26px;}
+  .lean-caption{
+    font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin-bottom:6px;
+    opacity:.75;
+  }
+  .lean-track{
+    display:flex;
+    height:6px;
+    width:100%;
+    border-radius:999px;
+    overflow:hidden;
+    background:rgba(246,241,231,0.06);
+    gap:2px;
+  }
+  .lean-seg{
+    height:100%;
+    flex:0 0 0%;
+    transition:flex-basis .5s cubic-bezier(.4,0,.2,1);
+    border-radius:999px;
+  }
+  .lean-seg.mausig{background:linear-gradient(90deg, var(--mausig), var(--mausig-2));}
+  .lean-seg.fotzig{background:linear-gradient(90deg, var(--fotzig), var(--fotzig-2));}
+  .lean-seg.atzig{background:linear-gradient(90deg, var(--atzig-dim), var(--atzig));}
+  .lean-seg.empty{background:rgba(246,241,231,0.10);flex:1 1 auto;}
+
+  /* ---------- question content (animated) ---------- */
+  .q-content{transition:opacity .22s ease, transform .22s ease;}
+  .q-content.leaving{opacity:0;transform:translateX(-14px);}
+  .q-content.entering{opacity:0;transform:translateX(14px);}
+
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  h1.question{
+    font-family:'Unbounded', sans-serif;
+    font-weight:600;
+    font-size:25px;
+    line-height:1.28;
+    margin:0 0 24px;
+    letter-spacing:-.01em;
+    min-height:64px;
+  }
+
+  .options{display:flex;flex-direction:column;gap:12px;}
+  .option{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    text-align:left;
+    background:rgba(246,241,231,0.035);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Manrope', sans-serif;
+    font-size:15.5px;
+    font-weight:600;
+    padding:16px 18px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .option:hover{background:rgba(246,241,231,0.07);border-color:rgba(246,241,231,0.22);transform:translateY(-1px);}
+  .option:active{transform:translateY(0);}
+  .option .dot{
+    width:9px;height:9px;border-radius:50%;
+    border:1.5px solid var(--muted);
+    flex-shrink:0;
+    transition:background .2s ease, border-color .2s ease;
+  }
+  .option.picked{border-color:transparent;}
+  .option.picked.v-mausig{background:rgba(255,196,214,0.14);}
+  .option.picked.v-mausig .dot{background:var(--mausig);border-color:var(--mausig);}
+  .option.picked.v-fotzig{background:rgba(255,46,136,0.14);}
+  .option.picked.v-fotzig .dot{background:var(--fotzig);border-color:var(--fotzig);}
+  .option.picked.v-atzig{background:rgba(156,166,107,0.16);}
+  .option.picked.v-atzig .dot{background:var(--atzig);border-color:var(--atzig);}
+
+  /* ---------- footer nav ---------- */
+  .footnav{
+    margin-top:26px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 14px;
+    justify-content:center;
+  }
+  .footnav a{
+    color:var(--muted);
+    text-decoration:none;
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+  .footnav a:hover{color:var(--text);}
+  .footnav span{color:var(--line);font-size:11px;}
+
+  /* ---------- result screen ---------- */
+  .result{display:none;}
+  .result.show{display:block;animation:resultIn .5s cubic-bezier(.4,0,.2,1);}
+  .quiz{display:block;}
+  .quiz.hide{display:none;}
+  @keyframes resultIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .result-hero{
+    text-align:center;
+    padding:8px 4px 26px;
+  }
+  .result-kicker{
+    font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;margin-bottom:14px;
+  }
+  .result-name{
+    font-family:'Unbounded', sans-serif;
+    font-weight:900;
+    font-size:58px;
+    line-height:1;
+    margin:0 0 16px;
+    letter-spacing:-.02em;
+  }
+  .result-desc{
+    font-size:15px;line-height:1.6;color:var(--text);
+    max-width:420px;margin:0 auto;opacity:.88;
+  }
+
+  .bars{margin:28px 0 6px;display:flex;flex-direction:column;gap:14px;}
+  .bar-row{display:flex;align-items:center;gap:12px;}
+  .bar-label{
+    width:58px;flex-shrink:0;font-size:12px;font-weight:800;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+  }
+  .bar-track{
+    flex:1;height:12px;border-radius:999px;background:rgba(246,241,231,0.08);
+    overflow:hidden;
+  }
+  .bar-fill{height:100%;border-radius:999px;width:0%;transition:width 1s cubic-bezier(.4,0,.2,1);}
+  .bar-fill.mausig{background:linear-gradient(90deg, var(--mausig), var(--mausig-2));}
+  .bar-fill.fotzig{background:linear-gradient(90deg, var(--fotzig), var(--fotzig-2));}
+  .bar-fill.atzig{background:linear-gradient(90deg, var(--atzig-dim), var(--atzig));}
+  .bar-pct{width:38px;text-align:right;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);}
+  .bar-row.winner .bar-label{color:var(--text);}
+
+  .btn-row{margin-top:24px;display:flex;flex-direction:column;gap:10px;}
+
+  .share-btn{
+    width:100%;
+    border:1.5px solid var(--text);
+    border-radius:16px;
+    padding:15px;
+    font-family:'Unbounded', sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    letter-spacing:.01em;
+    cursor:pointer;
+    color:#14100f;
+    background:var(--text);
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    transition:transform .1s ease, opacity .15s ease, box-shadow .2s ease;
+  }
+  .share-btn:hover{opacity:.9;}
+  .share-btn:active{transform:scale(.99);}
+  .share-btn svg{flex-shrink:0;}
+
+  .retake{
+    margin-top:0;
+    width:100%;
+    border:1.5px solid var(--line);
+    border-radius:16px;
+    padding:15px;
+    font-family:'Unbounded', sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    letter-spacing:.01em;
+    cursor:pointer;
+    color:var(--text);
+    background:transparent;
+    transition:transform .1s ease, background .15s ease, border-color .15s ease;
+  }
+  .retake:hover{background:rgba(246,241,231,0.06);border-color:rgba(246,241,231,0.25);}
+  .retake:active{transform:scale(.99);}
+
+  .toast{
+    position:absolute;
+    left:50%;
+    bottom:18px;
+    transform:translate(-50%, 8px);
+    background:var(--text);
+    color:#14100f;
+    font-size:12.5px;
+    font-weight:700;
+    padding:10px 18px;
+    border-radius:999px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    white-space:nowrap;
+    z-index:5;
+  }
+  .toast.show{opacity:1;transform:translate(-50%, 0);}
+
+  @media (max-width:420px){
+    .card{padding:22px 18px 18px;border-radius:22px;}
+    h1.question{font-size:21px;min-height:auto;}
+    .result-name{font-size:44px;}
+    .blob{filter:blur(50px);}
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+
+<div class="card" id="card">
+
+  <!-- QUIZ VIEW -->
+  <div class="quiz" id="quizView">
+    <div class="topbar">
+      <button class="back-btn" id="backBtn" aria-label="Zurück">←</button>
+      <button class="skip-btn" id="skipBtn">Überspringen (3)</button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-labels">
+        <div class="step">Frage <span id="stepNow">1</span> / <span id="stepTotal">20</span></div>
+        <div class="pct" id="stepPct">0%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="lean-wrap">
+      <div class="lean-caption">Dein Vibe bis jetzt</div>
+      <div class="lean-track" id="meter"><div class="lean-seg empty"></div></div>
+    </div>
+
+    <div class="q-content" id="qContent">
+      <div class="eyebrow">Holy Trinity Test</div>
+      <h1 class="question" id="questionText">—</h1>
+      <div class="options" id="optionsWrap"></div>
+    </div>
+
+    <div class="footnav">
+      <a href="https://atzigfotzigmausig.de/shop" target="_blank" rel="noopener">Shop</a><span>•</span>
+      <a href="https://atzigfotzigmausig.de/was-ist-atzig-fotzig-mausig" target="_blank" rel="noopener">Was ist atzig, fotzig, mausig?</a><span>•</span>
+      <a href="https://atzigfotzigmausig.de/faq" target="_blank" rel="noopener">FAQ</a>
+    </div>
+  </div>
+
+  <!-- RESULT VIEW -->
+  <div class="result" id="resultView">
+    <div class="result-hero">
+      <div class="result-kicker">Dein Ergebnis</div>
+      <h1 class="result-name" id="resultName">—</h1>
+      <p class="result-desc" id="resultDesc">—</p>
+    </div>
+
+    <div class="bars">
+      <div class="bar-row" id="rowMausig">
+        <div class="bar-label">Mausig</div>
+        <div class="bar-track"><div class="bar-fill mausig" id="barMausig"></div></div>
+        <div class="bar-pct" id="pctMausig">0%</div>
+      </div>
+      <div class="bar-row" id="rowFotzig">
+        <div class="bar-label">Fotzig</div>
+        <div class="bar-track"><div class="bar-fill fotzig" id="barFotzig"></div></div>
+        <div class="bar-pct" id="pctFotzig">0%</div>
+      </div>
+      <div class="bar-row" id="rowAtzig">
+        <div class="bar-label">Atzig</div>
+        <div class="bar-track"><div class="bar-fill atzig" id="barAtzig"></div></div>
+        <div class="bar-pct" id="pctAtzig">0%</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="share-btn" id="shareBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+        Mit Freunden teilen
+      </button>
+      <button class="retake" id="retakeBtn">Nochmal machen, neue Fragen ↻</button>
+    </div>
+
+    <div class="footnav">
+      <a href="https://atzigfotzigmausig.de/shop" target="_blank" rel="noopener">Shop</a><span>•</span>
+      <a href="https://atzigfotzigmausig.de/was-ist-atzig-fotzig-mausig" target="_blank" rel="noopener">Was ist atzig, fotzig, mausig?</a><span>•</span>
+      <a href="https://atzigfotzigmausig.de/faq" target="_blank" rel="noopener">FAQ</a>
+    </div>
+
+    <div class="toast" id="toast">Kopiert!</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  // master question bank — options get reshuffled per playthrough,
+  // and the question order gets reshuffled too, so every run feels different.
+  const masterQuestions = [
+    { q:"Wie kommst du von A nach B?", options:[
+      {t:"Spazieren, Kopfhörer rein, Rest ist egal", v:"mausig"},
+      {t:"Cabrio, Musik laut, Sonnenbrille auf", v:"fotzig"},
+      {t:"E-Scooter, eine Hand am Lenker, die andere hält den Döner", v:"atzig"},
+    ]},
+    { q:"Was steht in deinem Kühlschrank?", options:[
+      {t:"Eine Packung Gummibärchen und drei Sorten Tee", v:"mausig"},
+      {t:"Champagner, aber kein Essen", v:"fotzig"},
+      {t:"Energy Drinks und Reste vom Dönerteller", v:"atzig"},
+    ]},
+    { q:"Jemand rempelt dich in der Bahn an. Deine Reaktion?", options:[
+      {t:"Du entschuldigst dich, obwohl du nichts falsch gemacht hast", v:"mausig"},
+      {t:"Du drehst dich um und machst eine Szene, die alle filmen wollen", v:"fotzig"},
+      {t:"Du sagst „digga“ und gehst einfach weiter", v:"atzig"},
+    ]},
+    { q:"Dein Traumurlaub sieht aus wie...", options:[
+      {t:"Wellness-Retreat mit Kräutertee und Häkelkurs", v:"mausig"},
+      {t:"Dubai, Rooftop-Pool, mindestens fünf Outfit-Wechsel pro Tag", v:"fotzig"},
+      {t:"Interrail mit Rucksack, Feuerzeug und keinem Plan", v:"atzig"},
+    ]},
+    { q:"Was zeigt dein Handy-Hintergrund?", options:[
+      {t:"Ein Foto von deinem Haustier", v:"mausig"},
+      {t:"Ein Selfie, auf dem du besser aussiehst als live", v:"fotzig"},
+      {t:"Ein Screenshot, den du nie geändert hast", v:"atzig"},
+    ]},
+    { q:"Was bestellst du beim Bäcker?", options:[
+      {t:"Ein Vollkornbrötchen mit Butter, ganz brav", v:"mausig"},
+      {t:"Einen Iced Matcha, obwohl es gar kein Café ist", v:"fotzig"},
+      {t:"Zwei Käsekrainer und einen Kaffee to go", v:"atzig"},
+    ]},
+    { q:"Ein Referat steht an. Was machst du?", options:[
+      {t:"Karteikarten sind seit zwei Wochen fertig", v:"mausig"},
+      {t:"Du improvisierst mit einer Selbstsicherheit, die keiner hinterfragt", v:"fotzig"},
+      {t:"Folien fünf Minuten vorher, im Bus, auf dem Handy", v:"atzig"},
+    ]},
+    { q:"Welches Haustier passt zu dir?", options:[
+      {t:"Ein Hase", v:"mausig"},
+      {t:"Eine Katze, die dich ignoriert, bis sie dich braucht", v:"fotzig"},
+      {t:"Ein Kampfschmuser-Mischling aus dem Tierheim", v:"atzig"},
+    ]},
+    { q:"Was läuft gerade auf deiner Startseite in der Musik-App?", options:[
+      {t:"Lo-fi Playlist zum Einschlafen", v:"mausig"},
+      {t:"Alles laut, mit Bass bis die Nachbarn klingeln", v:"fotzig"},
+      {t:"Deutschrap, den deine Eltern nicht verstehen sollen", v:"atzig"},
+    ]},
+    { q:"Was hast du immer griffbereit dabei?", options:[
+      {t:"Pflaster, Taschentücher und einen Notfall-Snack", v:"mausig"},
+      {t:"Einen Parfum-Tester — mehr braucht's nicht", v:"fotzig"},
+      {t:"Ein Feuerzeug, das nicht mal dir gehört", v:"atzig"},
+    ]},
+    { q:"Wie feierst du deinen Geburtstag?", options:[
+      {t:"Kleine Runde, selbstgebackener Kuchen, Kerzen", v:"mausig"},
+      {t:"Tisch reserviert, Deko abgestimmt, ein Outfit-Wechsel mindestens", v:"fotzig"},
+      {t:"Wird spontan entschieden, meistens beim dritten Bier", v:"atzig"},
+    ]},
+    { q:"Was ist dein Lebensmotto?", options:[
+      {t:"„Sei nett, auch wenn's schwerfällt.“", v:"mausig"},
+      {t:"„Lieber too much als too little.“", v:"fotzig"},
+      {t:"„Ist doch eh alles wurscht.“", v:"atzig"},
+    ]},
+    { q:"Wie sieht dein Zimmer bzw. Schreibtisch aus?", options:[
+      {t:"Aufgeräumt, kleine Deko, eine Kerze brennt", v:"mausig"},
+      {t:"Chaos, aber jedes Teil ist aesthetic positioniert", v:"fotzig"},
+      {t:"Irgendwo liegt ein Ladekabel, das zu nichts mehr passt", v:"atzig"},
+    ]},
+    { q:"Wie sieht dein Ausweisfoto aus?", options:[
+      {t:"Du lächelst brav, wie es sich gehört", v:"mausig"},
+      {t:"Du siehst aus wie ein Filmstar, keine Ahnung wie", v:"fotzig"},
+      {t:"Sieht aus, als wärst du direkt vom Aufstehen gekommen", v:"atzig"},
+    ]},
+    { q:"Es regnet. Was ziehst du an?", options:[
+      {t:"Regenmantel mit Kapuze, damit du nicht krank wirst", v:"mausig"},
+      {t:"Egal, nasse Haare sehen bei dir trotzdem gut aus", v:"fotzig"},
+      {t:"Kapuzenpulli drüber, fertig", v:"atzig"},
+    ]},
+    { q:"Was ist dein Beitrag in der Gruppenarbeit?", options:[
+      {t:"Du koordinierst und erinnerst alle an Deadlines", v:"mausig"},
+      {t:"Du hältst die Präsentation, weil du am selbstbewusstesten wirkst", v:"fotzig"},
+      {t:"Du machst den Teil, den keiner wollte, ohne zu meckern", v:"atzig"},
+    ]},
+    { q:"Wie reagierst du auf ein Kompliment?", options:[
+      {t:"Du wirst rot und weißt nicht wohin mit dir", v:"mausig"},
+      {t:"Du bedankst dich und weißt, dass es stimmt", v:"fotzig"},
+      {t:"Du zuckst mit den Schultern: „ist halt so“", v:"atzig"},
+    ]},
+    { q:"Welcher Duft passt am ehesten zu dir?", options:[
+      {t:"Vanille und frische Wäsche", v:"mausig"},
+      {t:"Etwas Süßes und Schweres, das man drei Räume weiter riecht", v:"fotzig"},
+      {t:"Zigarettenrauch und ein bisschen Feuerzeugbenzin", v:"atzig"},
+    ]},
+    { q:"„Wollen wir noch einen trinken gehen?“ — 23 Uhr, deine Antwort?", options:[
+      {t:"„Muss morgen früh raus, aber viel Spaß euch“", v:"mausig"},
+      {t:"„Nur wenn wir vorher noch das Outfit wechseln“", v:"fotzig"},
+      {t:"„Bin eh schon da“", v:"atzig"},
+    ]},
+    { q:"Was für ein Kommentar landet am ehesten unter deinem Story-Post?", options:[
+      {t:"„Du bist so lieb 🥹💗“", v:"mausig"},
+      {t:"„Mother is mothering 😍🔥“", v:"fotzig"},
+      {t:"„Alter geh scannen“", v:"atzig"},
+    ]},
+  ];
+
+  const results = {
+    mausig:{
+      name:"Mausig",
+      color:"var(--mausig)",
+      hex:"#FFC4D6",
+      desc:"Du bist der weiche Kern der Holy Trinity: Pastelltöne, ein Pflaster im Rucksack für den Notfall und ein Lächeln für jeden Hund auf der Straße. Deine Superkraft ist, dass dir alle sofort vertrauen."
+    },
+    fotzig:{
+      name:"Fotzig",
+      color:"var(--fotzig)",
+      hex:"#FF2E88",
+      desc:"Du bist laut, glitzernd und ein bisschen too much — und genau das ist der Punkt. Drama gehört zu deinem Leben wie Highlighter zum Contour, und du kommst lieber zu spät, aber dafür im besten Look im Raum."
+    },
+    atzig:{
+      name:"Atzig",
+      color:"var(--atzig)",
+      hex:"#9CA66B",
+      desc:"Du machst dir nichts aus Trends, dafür viel aus Ehrlichkeit. Weite Klamotten, lockere Sprüche und die Grundhaltung: Style ist wichtiger als perfekt sein."
+    },
+  };
+
+  // Not every answer should weigh the same — some options are a stronger, more
+  // decisive signal for their vibe, others are more of a soft lean. Rotating
+  // weight patterns give each question a different "impact" per option instead
+  // of a flat +1 every time, so the result feels less mechanical.
+  const weightPatterns = [
+    [3,1,2],[1,2,3],[2,3,1],[3,2,1],[1,3,2],[2,1,3]
+  ];
+  masterQuestions.forEach((q, qi) => {
+    const pattern = weightPatterns[qi % weightPatterns.length];
+    q.options.forEach((opt, oi) => { opt.w = pattern[oi]; });
+  });
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildSession(){
+    // shuffle question order, and shuffle each question's option order
+    return shuffle(masterQuestions).map(q => ({
+      q: q.q,
+      options: shuffle(q.options)
+    }));
+  }
+
+  let questions = buildSession();
+  let index = 0;
+  let answers = []; // vibe string or null (skipped), aligned to `questions`
+  let skipsLeft = 3;
+
+  const skipBtn = document.getElementById('skipBtn');
+  const backBtn = document.getElementById('backBtn');
+  const meterEl = document.getElementById('meter');
+  const questionEl = document.getElementById('questionText');
+  const optionsWrap = document.getElementById('optionsWrap');
+  const quizView = document.getElementById('quizView');
+  const resultView = document.getElementById('resultView');
+  const qContent = document.getElementById('qContent');
+  const stepNow = document.getElementById('stepNow');
+  const stepTotal = document.getElementById('stepTotal');
+  const stepPct = document.getElementById('stepPct');
+  const progressFill = document.getElementById('progressFill');
+
+  stepTotal.textContent = questions.length;
+
+  function renderProgress(){
+    const pct = Math.round((index / questions.length) * 100);
+    stepNow.textContent = index + 1;
+    stepPct.textContent = pct + '%';
+    progressFill.style.width = pct + '%';
+  }
+
+  function renderQuestion(){
+    const q = questions[index];
+    questionEl.textContent = q.q;
+    skipBtn.textContent = 'Überspringen (' + skipsLeft + ')';
+    skipBtn.disabled = skipsLeft <= 0;
+    backBtn.disabled = index === 0;
+
+    optionsWrap.innerHTML = '';
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.innerHTML = '<span class="dot"></span><span>' + opt.t + '</span>';
+      btn.addEventListener('click', () => selectOption(opt, btn));
+      optionsWrap.appendChild(btn);
+    });
+
+    const existing = answers[index];
+    if(existing){
+      [...optionsWrap.children].forEach((btn,i) => {
+        if(q.options[i].v === existing.v && q.options[i].w === existing.w){
+          btn.classList.add('picked', 'v-' + existing.v);
+        }
+      });
+    }
+
+    renderProgress();
+    renderMeter();
+  }
+
+  function renderMeter(){
+    const counts = {mausig:0, fotzig:0, atzig:0};
+    let total = 0;
+    answers.forEach(a => { if(a){ counts[a.v] += a.w; total += a.w; } });
+
+    meterEl.innerHTML = '';
+    if(total === 0){
+      const seg = document.createElement('div');
+      seg.className = 'lean-seg empty';
+      meterEl.appendChild(seg);
+      return;
+    }
+    ['mausig','fotzig','atzig'].forEach(v => {
+      if(counts[v] > 0){
+        const seg = document.createElement('div');
+        seg.className = 'lean-seg ' + v;
+        seg.style.flexBasis = (counts[v]/total*100) + '%';
+        meterEl.appendChild(seg);
+      }
+    });
+  }
+
+  function goTo(nextIndex){
+    qContent.classList.add('leaving');
+    setTimeout(() => {
+      index = nextIndex;
+      renderQuestion();
+      qContent.classList.remove('leaving');
+      qContent.classList.add('entering');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => qContent.classList.remove('entering'));
+      });
+    }, 180);
+  }
+
+  function selectOption(opt, btn){
+    [...optionsWrap.children].forEach(b => b.classList.remove('picked','v-mausig','v-fotzig','v-atzig'));
+    btn.classList.add('picked', 'v-' + opt.v);
+    answers[index] = { v: opt.v, w: opt.w };
+    renderMeter();
+    setTimeout(() => {
+      if(index < questions.length - 1){
+        goTo(index + 1);
+      } else {
+        showResult();
+      }
+    }, 260);
+  }
+
+  skipBtn.addEventListener('click', () => {
+    if(skipsLeft <= 0) return;
+    skipsLeft--;
+    answers[index] = null;
+    if(index < questions.length - 1){
+      goTo(index + 1);
+    } else {
+      showResult();
+    }
+  });
+
+  backBtn.addEventListener('click', () => {
+    if(index === 0) return;
+    goTo(index - 1);
+  });
+
+  let lastResult = null; // { winner, r, pct } — used by the share button
+
+  function showResult(){
+    const counts = {mausig:0, fotzig:0, atzig:0};
+    let total = 0;
+    answers.forEach(a => { if(a){ counts[a.v] += a.w; total += a.w; } });
+    if(total === 0){ total = 1; } // guard div/0
+
+    const winner = Object.keys(counts).sort((a,b) => counts[b]-counts[a])[0];
+    const r = results[winner];
+
+    document.getElementById('resultName').textContent = r.name;
+    document.getElementById('resultName').style.color = r.color;
+    document.getElementById('resultDesc').textContent = r.desc;
+
+    const pctM = Math.round(counts.mausig/total*100);
+    const pctF = Math.round(counts.fotzig/total*100);
+    const pctA = Math.round(counts.atzig/total*100);
+    const pctByVibe = {mausig:pctM, fotzig:pctF, atzig:pctA};
+
+    document.getElementById('pctMausig').textContent = pctM + '%';
+    document.getElementById('pctFotzig').textContent = pctF + '%';
+    document.getElementById('pctAtzig').textContent = pctA + '%';
+
+    ['rowMausig','rowFotzig','rowAtzig'].forEach(id => document.getElementById(id).classList.remove('winner'));
+    document.getElementById('row' + winner.charAt(0).toUpperCase() + winner.slice(1)).classList.add('winner');
+
+    quizView.classList.add('hide');
+    resultView.classList.add('show');
+
+    requestAnimationFrame(() => {
+      document.getElementById('barMausig').style.width = pctM + '%';
+      document.getElementById('barFotzig').style.width = pctF + '%';
+      document.getElementById('barAtzig').style.width = pctA + '%';
+    });
+
+    lastResult = { winner, r, pct: pctByVibe[winner] };
+    const shareBtn = document.getElementById('shareBtn');
+    shareBtn.style.borderColor = r.hex;
+    shareBtn.style.boxShadow = '0 0 24px ' + r.hex + '40';
+  }
+
+  let toastTimer = null;
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  async function shareResult(){
+    if(!lastResult) return;
+    const { r, pct } = lastResult;
+    const text = 'Ich bin ' + r.name + ' laut dem Holy Trinity Test (' + pct + '% ' + r.name + ')! 🔮 Mach du auch mit:';
+    const url = location.protocol.indexOf('http') === 0 ? location.href : 'https://atzigfotzigmausig.de/quiz';
+
+    if(navigator.share){
+      try{
+        await navigator.share({ title: 'Holy Trinity Test', text: text, url: url });
+      }catch(err){
+        // user cancelled the native share sheet — nothing to do
+      }
+      return;
+    }
+
+    try{
+      await navigator.clipboard.writeText(text + ' ' + url);
+      showToast('Ergebnis kopiert — jetzt einfügen!');
+    }catch(err){
+      showToast('Kopieren hat nicht geklappt 😕');
+    }
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', shareResult);
+
+  document.getElementById('retakeBtn').addEventListener('click', () => {
+    questions = buildSession(); // fresh order + fresh option shuffle each round
+    stepTotal.textContent = questions.length;
+    index = 0;
+    answers = [];
+    skipsLeft = 3;
+    lastResult = null;
+    resultView.classList.remove('show');
+    quizView.classList.remove('hide');
+    ['barMausig','barFotzig','barAtzig'].forEach(id => document.getElementById(id).style.width = '0%');
+    renderQuestion();
+  });
+
+  renderQuestion();
+})();
+</script>
+
+</body>
+</html>
